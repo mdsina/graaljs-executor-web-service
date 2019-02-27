@@ -13,14 +13,7 @@ body:
   "inputs": [
     {
       "name": "RU_STR",
-      "type": "TEXT",
       "value": "Съешь еще этих мягких булок да выпей чаю"
-    }
-  ],
-  "outputs": [
-    {
-      "name": "EN_STR",
-      "type": "TEXT"
     }
   ]
 }
