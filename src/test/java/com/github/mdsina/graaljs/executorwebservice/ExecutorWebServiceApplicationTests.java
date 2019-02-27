@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mdsina.graaljs.executorwebservice.domain.InvocationInfo;
-import com.github.mdsina.graaljs.executorwebservice.domain.TextVariable;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +34,12 @@ public class ExecutorWebServiceApplicationTests {
     @Test
     public void checkTransliterateOutput() throws Exception {
         InvocationInfo invocationInfo = new InvocationInfo(new ArrayList<>(), new ArrayList<>());
-        invocationInfo.getInputs().add(new TextVariable("RU_STR", "Привет, Graal!"));
-        invocationInfo.getOutputs().add(new TextVariable("EN_STR"));
+        invocationInfo.getInputs().add(new Variable("RU_STR", "Привет, Graal!"));
+        invocationInfo.getOutputs().add(new Variable( "EN_STR"));
 
         String content = this.mockMvc
             .perform(
-                post("/api/v1/script/TEST")
+                post("/api/v1/script/TEST_1")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(invocationInfo))
             )

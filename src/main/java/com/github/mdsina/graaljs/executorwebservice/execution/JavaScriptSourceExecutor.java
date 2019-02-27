@@ -1,7 +1,6 @@
 package com.github.mdsina.graaljs.executorwebservice.execution;
 
 import com.github.mdsina.graaljs.executorwebservice.context.ScriptExecutionScope;
-import com.github.mdsina.graaljs.executorwebservice.domain.InvocationInfo;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import com.github.mdsina.graaljs.executorwebservice.dto.ScriptDto;
 import java.lang.invoke.MethodHandles;
@@ -39,8 +38,7 @@ public class JavaScriptSourceExecutor {
 
     public List<Map<String, Object>> execute(
         ScriptDto script,
-        List<Variable> inputs,
-        InvocationInfo meta
+        List<Variable> inputs
     ) throws Exception {
 
         // nextHexString can cause same value on multiple threads
@@ -52,7 +50,6 @@ public class JavaScriptSourceExecutor {
             Value namespaceObj = contextWrapper.getScriptBindings(script);
 
             executionScopeDataBridge.setInputs(inputs);
-            executionScopeDataBridge.setMeta(meta);
 
             namespaceObj.getMember("callFunction").executeVoid();
             logger.trace("{}.callFunction called", script.getId());

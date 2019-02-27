@@ -1,7 +1,6 @@
 package com.github.mdsina.graaljs.executorwebservice.execution;
 
 import com.github.mdsina.graaljs.executorwebservice.context.annotation.ScriptExecutionScope;
-import com.github.mdsina.graaljs.executorwebservice.domain.InvocationInfo;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,8 +13,6 @@ import org.springframework.stereotype.Component;
 @Component
 @ScriptExecutionScope
 public class ExecutionScopeDataBridge {
-
-    private Map<String, String> metaOutputsTypes = new HashMap<>();
 
     private Map<String, Object> inputs = new HashMap<>();
     private List<Map<String, Object>> outputs = new ArrayList<>();
@@ -34,19 +31,7 @@ public class ExecutionScopeDataBridge {
         Map<String, Object> output = new HashMap<>();
         output.put("name", key);
         output.put("value", value);
-        output.put("type", getType(key));
         outputs.add(output);
-    }
-
-    private String getType(String key) {
-        return Optional.ofNullable(metaOutputsTypes.get(key.toUpperCase())).orElse("UNKNOWN");
-    }
-
-    public void setMeta(InvocationInfo meta) {
-        metaOutputsTypes = meta.getOutputs().stream().collect(Collectors.toMap(
-            o -> o.getName().toUpperCase(),
-            o -> o.getType().name()
-        ));
     }
 
     public void setInputs(List<Variable> inputs) {

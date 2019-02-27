@@ -3,49 +3,31 @@ package com.github.mdsina.graaljs.executorwebservice.domain;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
-    include = JsonTypeInfo.As.EXISTING_PROPERTY,
-    property = "type",
-    visible = true
-)
-@JsonSubTypes({
-    @JsonSubTypes.Type(value = TextVariable.class, name = "TEXT"),
-})
-@JsonPropertyOrder({"name", "type", "value"})
+@JsonPropertyOrder({"name", "value"})
 @JsonInclude(Include.NON_NULL)
-public abstract class Variable<T> implements Cloneable {
+public class Variable implements Cloneable {
 
-    private DataType type;
-    private T value;
+    private Object value;
     private String name;
 
     public Variable() {
     }
 
-    public Variable(DataType type) {
-        this.type = type;
-    }
-
-    public Variable(DataType type, String name) {
-        this.type = type;
+    public Variable(String name) {
         this.name = name;
     }
 
-    public Variable(DataType type, String name, T value) {
-        this.type = type;
+    public Variable(String name, Object value) {
         this.value = value;
         this.name = name;
     }
 
-    public T getValue() {
+    public Object getValue() {
         return value;
     }
 
-    public void setValue(T value) {
+    public void setValue(Object value) {
         this.value = value;
     }
 
@@ -55,16 +37,6 @@ public abstract class Variable<T> implements Cloneable {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public abstract void setFromString(String value);
-
-    public DataType getType() {
-        return type;
-    }
-
-    public void setType(DataType type) {
-        this.type = type;
     }
 
     @Override
