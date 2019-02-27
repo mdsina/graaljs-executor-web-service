@@ -5,7 +5,7 @@ This service provide ability to execute some specific JS code with high load.
 
 For example do POST request and see result:
 
-`POST /api/v1/script/TEST`
+`POST /api/v1/script/TEST_1`
 
 body:
 ```
