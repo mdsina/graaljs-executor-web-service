@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>11</java.version>
-        <graal.version>1.0.0-rc12</graal.version>
+        <graal.version>19.0.0</graal.version>
     </properties>
 
     <dependencies>
