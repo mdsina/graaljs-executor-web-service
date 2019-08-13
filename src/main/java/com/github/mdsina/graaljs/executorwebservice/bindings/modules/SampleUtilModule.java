@@ -1,7 +1,7 @@
-package com.github.mdsina.graaljs.executorwebservice.modules;
+package com.github.mdsina.graaljs.executorwebservice.bindings.modules;
 
 import com.github.mdsina.graaljs.executorwebservice.bindings.RequireModule;
-import com.github.mdsina.graaljs.executorwebservice.exports.SampleUtil;
+import com.github.mdsina.graaljs.executorwebservice.bindings.exports.SampleUtil;
 import org.springframework.stereotype.Component;
 
 @Component

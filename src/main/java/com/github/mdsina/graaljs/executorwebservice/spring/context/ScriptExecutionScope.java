@@ -1,7 +1,8 @@
-package com.github.mdsina.graaljs.executorwebservice.context;
+package com.github.mdsina.graaljs.executorwebservice.spring.context;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.config.Scope;
 
@@ -11,6 +12,12 @@ public class ScriptExecutionScope implements Scope {
 
     private final ThreadLocal<Map<String, Map<String, Object>>> context = ThreadLocal.withInitial(HashMap::new);
     private final ThreadLocal<String> currentExecutionId = ThreadLocal.withInitial(() -> null);
+
+    private final RandomDataGenerator randomDataGenerator;
+
+    public ScriptExecutionScope(RandomDataGenerator randomDataGenerator) {
+        this.randomDataGenerator = randomDataGenerator;
+    }
 
     @Override
     public Object get(String s, ObjectFactory<?> objectFactory) {
@@ -59,16 +66,16 @@ public class ScriptExecutionScope implements Scope {
         return ID;
     }
 
-    public void activate(String scriptExecutionId) {
-        if (scriptExecutionId == null) {
-            throw new IllegalStateException("Cannot activate scope. Script execution id cannot be null");
-        }
+    public String activate() {
+        String scriptExecutionId = randomDataGenerator.nextHexString(10) + "_" + Thread.currentThread().getName();
         Map<String, Map<String, Object>> executionsBeans = context.get();
         if (executionsBeans.containsKey(scriptExecutionId)) {
             throw new IllegalStateException("Scope already activated (execution_id=" + scriptExecutionId + ")");
         }
         executionsBeans.put(scriptExecutionId, new HashMap<>());
         currentExecutionId.set(scriptExecutionId);
+
+        return scriptExecutionId;
     }
 
     public void deactivate() {

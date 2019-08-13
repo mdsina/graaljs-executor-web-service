@@ -1,4 +1,4 @@
-package com.github.mdsina.graaljs.executorwebservice.exports;
+package com.github.mdsina.graaljs.executorwebservice.bindings.exports;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;

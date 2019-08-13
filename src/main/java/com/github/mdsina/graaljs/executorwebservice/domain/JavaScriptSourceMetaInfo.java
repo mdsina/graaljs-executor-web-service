@@ -2,63 +2,27 @@ package com.github.mdsina.graaljs.executorwebservice.domain;
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
 
+@Getter
+@Builder(builderClassName = "Builder")
 public class JavaScriptSourceMetaInfo {
 
-    private String description;
+    private final String description;
 
     @JsonUnwrapped
-    private InvocationInfo invocationInfo;
+    private final InvocationInfo invocationInfo;
 
-    private List<ExampleInfo> examples;
+    private final List<ExampleInfo> examples;
 
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public InvocationInfo getInvocationInfo() {
-        return invocationInfo;
-    }
-
-    public void setInvocationInfo(InvocationInfo invocationInfo) {
-        this.invocationInfo = invocationInfo;
-    }
-
-    public List<ExampleInfo> getExamples() {
-        return examples;
-    }
-
-    public void setExamples(List<ExampleInfo> examples) {
-        this.examples = examples;
-    }
-
+    @Getter
+    @lombok.Builder(builderClassName = "Builder")
     public static class ExampleInfo {
 
-        private String name;
+        private final String name;
 
         @JsonUnwrapped
-        private InvocationInfo invocationInfo;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public InvocationInfo getInvocationInfo() {
-            return invocationInfo;
-        }
-
-        public void setInvocationInfo(InvocationInfo invocationInfo) {
-            this.invocationInfo = invocationInfo;
-        }
-
+        private final InvocationInfo invocationInfo;
     }
 }

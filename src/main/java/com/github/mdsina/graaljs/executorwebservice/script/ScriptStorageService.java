@@ -1,6 +1,5 @@
-package com.github.mdsina.graaljs.executorwebservice.service;
+package com.github.mdsina.graaljs.executorwebservice.script;
 
-import com.github.mdsina.graaljs.executorwebservice.dto.ScriptDto;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class ScriptStorageService {
 
     private static final LocalDateTime START_TIME = LocalDateTime.now(); // just for test purposes
-    private static final Map<String, ScriptDto> SCRIPTS = new ConcurrentHashMap<>();
+    private static final Map<String, Script> SCRIPTS = new ConcurrentHashMap<>();
 
     static {
         // In real world sources loaded from database with versioning
@@ -31,12 +30,19 @@ public class ScriptStorageService {
 
         IntStream.range(1, 1001).forEach(i -> {
             String id = "TEST_" + i;
-            SCRIPTS.put(id, new ScriptDto(id, content, START_TIME));
+            SCRIPTS.put(
+                id,
+                Script.builder()
+                    .id(id)
+                    .body(content)
+                    .modifyDate(START_TIME)
+                    .build()
+            );
         });
     }
 
-    public ScriptDto getScript(String scriptId) {
-        ScriptDto content = SCRIPTS.get(scriptId);
+    public Script getScript(String scriptId) {
+        Script content = SCRIPTS.get(scriptId);
         if (content == null) {
             throw new RuntimeException("Script " + scriptId + " not found");
         }

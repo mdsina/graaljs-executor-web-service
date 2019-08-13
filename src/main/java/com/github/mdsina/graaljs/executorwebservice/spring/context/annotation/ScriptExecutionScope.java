@@ -1,6 +1,6 @@
-package com.github.mdsina.graaljs.executorwebservice.context.annotation;
+package com.github.mdsina.graaljs.executorwebservice.spring.context.annotation;
 
-import static com.github.mdsina.graaljs.executorwebservice.context.ScriptExecutionScope.ID;
+import static com.github.mdsina.graaljs.executorwebservice.spring.context.ScriptExecutionScope.ID;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

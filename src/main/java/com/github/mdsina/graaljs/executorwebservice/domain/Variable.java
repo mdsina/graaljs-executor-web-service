@@ -3,41 +3,20 @@ package com.github.mdsina.graaljs.executorwebservice.domain;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import lombok.Builder;
+import lombok.Getter;
 
 @JsonPropertyOrder({"name", "value"})
 @JsonInclude(Include.NON_NULL)
+@Getter
+@Builder(builderClassName = "Builder")
+@JsonDeserialize(builder = Variable.Builder.class)
 public class Variable implements Cloneable {
 
-    private Object value;
-    private String name;
-
-    public Variable() {
-    }
-
-    public Variable(String name) {
-        this.name = name;
-    }
-
-    public Variable(String name, Object value) {
-        this.value = value;
-        this.name = name;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public void setValue(Object value) {
-        this.value = value;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+    private final Object value;
+    private final String name;
 
     @Override
     public Variable clone() {
@@ -46,5 +25,10 @@ public class Variable implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class Builder {
+
     }
 }

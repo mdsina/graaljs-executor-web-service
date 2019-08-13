@@ -11,10 +11,10 @@ public class SourceCache {
     private final Map<String, Source> sourcesCache = new ConcurrentHashMap<>();
 
     public Source getSource(String scriptName, String body) {
-        return sourcesCache.computeIfAbsent(scriptName, name -> compileScript(name, body));
+        return sourcesCache.computeIfAbsent(scriptName, name -> buildSource(name, body));
     }
 
-    private Source compileScript(String scriptName, String body) {
-        return Source.newBuilder("js", body, scriptName).cached(false).buildLiteral();
+    private Source buildSource(String scriptName, String body) {
+        return Source.newBuilder("js", body, scriptName).buildLiteral();
     }
 }

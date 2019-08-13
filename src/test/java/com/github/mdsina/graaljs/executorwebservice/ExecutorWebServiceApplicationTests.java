@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mdsina.graaljs.executorwebservice.domain.InvocationInfo;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
-import java.util.ArrayList;
+import com.github.mdsina.graaljs.executorwebservice.execution.JsExecutionResult;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,9 +33,19 @@ public class ExecutorWebServiceApplicationTests {
 
     @Test
     public void checkTransliterateOutput() throws Exception {
-        InvocationInfo invocationInfo = new InvocationInfo(new ArrayList<>(), new ArrayList<>());
-        invocationInfo.getInputs().add(new Variable("RU_STR", "Привет, Graal!"));
-        invocationInfo.getOutputs().add(new Variable( "EN_STR"));
+        InvocationInfo invocationInfo = InvocationInfo.builder()
+            .inputs(List.of(
+                Variable.builder()
+                    .name("RU_STR")
+                    .value("Привет, Graal!")
+                    .build()
+            ))
+            .outputs(List.of(
+                Variable.builder()
+                    .name("EN_STR")
+                    .build()
+            ))
+            .build();
 
         String content = this.mockMvc
             .perform(
@@ -46,11 +56,11 @@ public class ExecutorWebServiceApplicationTests {
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
 
-        List<Variable> response = objectMapper.readValue(content, new TypeReference<List<Variable>>() {});
-        assertFalse(response.isEmpty());
-        assertNotEquals(null, response.get(0));
-        assertEquals("EN_STR", response.get(0).getName());
-        assertEquals("Privet, Graal!", response.get(0).getValue());
+        JsExecutionResult response = objectMapper.readValue(content, new TypeReference<JsExecutionResult>() {});
+        assertFalse(response.getOutputs().isEmpty());
+        assertNotEquals(null, response.getOutputs().get(0));
+        assertEquals("EN_STR", response.getOutputs().get(0).getName());
+        assertEquals("Privet, Graal!", response.getOutputs().get(0).getValue());
     }
 }
 

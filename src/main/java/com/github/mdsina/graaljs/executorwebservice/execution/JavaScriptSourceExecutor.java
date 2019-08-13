@@ -1,21 +1,21 @@
 package com.github.mdsina.graaljs.executorwebservice.execution;
 
-import com.github.mdsina.graaljs.executorwebservice.bindings.BindingsProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mdsina.graaljs.executorwebservice.cache.SourceCache;
-import com.github.mdsina.graaljs.executorwebservice.context.ScriptExecutionScope;
+import com.github.mdsina.graaljs.executorwebservice.interop.JsonConverter;
+import com.github.mdsina.graaljs.executorwebservice.interop.JsonConverterProxy;
+import com.github.mdsina.graaljs.executorwebservice.logging.SLF4JOutputStreamBridge.SLF4JOutputStreamBridgeBuilder;
+import com.github.mdsina.graaljs.executorwebservice.spring.context.ScriptExecutionScope;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
-import com.github.mdsina.graaljs.executorwebservice.dto.ScriptDto;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.commons.math3.random.RandomDataGenerator;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.Source;
-import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,59 +23,67 @@ public class JavaScriptSourceExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final ScriptExecutionScope executionScope;
-    private final RandomDataGenerator randomDataGenerator;
-    private final ExecutionScopeDataBridge executionScopeDataBridge;
+    private final ScriptExecutionScope scope;
+    private final ExecutionScopeDataBridge dataBridge;
+    private final JsonConverterProxy jsonConverterProxy;
     private final SourceCache sourceCache;
-    private final Set<BindingsProvider> bindingsProviders;
-    private final Engine engine;
+    private final ObjectFactory<Context> contextObjectFactory;
+    private final SLF4JOutputStreamBridgeBuilder outputStreamBuilder;
+    private final SLF4JOutputStreamBridgeBuilder errorStreamBuilder;
+    private final ObjectMapper objectMapper;
 
     public JavaScriptSourceExecutor(
-        ScriptExecutionScope executionScope,
-        ExecutionScopeDataBridge executionScopeDataBridge,
-        RandomDataGenerator randomDataGenerator,
+        ScriptExecutionScope scope,
+        ExecutionScopeDataBridge dataBridge,
+        JsonConverterProxy jsonConverterProxy,
         SourceCache sourceCache,
-        Set<BindingsProvider> bindingsProviders,
-        Engine engine
+        ObjectFactory<Context> contextObjectFactory,
+        @Qualifier("jsOutputStreamBuilder") SLF4JOutputStreamBridgeBuilder outputStreamBuilder,
+        @Qualifier("jsErrorStreamBuilder") SLF4JOutputStreamBridgeBuilder errorStreamBuilder,
+        ObjectMapper objectMapper
     ) {
-        this.executionScope = executionScope;
-        this.executionScopeDataBridge = executionScopeDataBridge;
-        this.randomDataGenerator = randomDataGenerator;
+        this.scope = scope;
+        this.dataBridge = dataBridge;
+        this.jsonConverterProxy = jsonConverterProxy;
         this.sourceCache = sourceCache;
-        this.bindingsProviders = bindingsProviders;
-        this.engine = engine;
+        this.contextObjectFactory = contextObjectFactory;
+        this.outputStreamBuilder = outputStreamBuilder;
+        this.errorStreamBuilder = errorStreamBuilder;
+        this.objectMapper = objectMapper;
     }
 
-    public List<Map<String, Object>> execute(ScriptDto script, List<Variable> inputs) {
-        // nextHexString can cause same value on multiple threads
-        String scriptRunId = script.getId() + "_" + randomDataGenerator.nextHexString(16);
-        executionScope.activate(scriptRunId);
+    public JsExecutionResult execute(String scriptName, String body, List<Variable> inputs) throws Exception {
+        String activationId = scope.activate();
 
         try {
-            executionScopeDataBridge.setInputs(inputs);
+            StringBuilder outputBuilder = new StringBuilder();
+            StringBuilder errorBuilder = new StringBuilder();
 
-            Source source = sourceCache.getSource(script.getId(), script.getBody());
+            dataBridge.setInputs(inputs);
+            outputStreamBuilder.addConsumer(outputBuilder::append);
+            errorStreamBuilder.addConsumer(errorBuilder::append);
 
-            try (Context context = getContext()) {
+            Source source = sourceCache.getSource(scriptName, body);
+            String json;
+
+            try (Context context = contextObjectFactory.getObject()) {
+                jsonConverterProxy.setJsonConverter(new JsonConverter(context.getBindings("js").getMember("JSON")));
+
                 context.eval(source);
                 context.getBindings("js").getMember("callFunction").executeVoid();
-                logger.trace("{}.callFunction called", script.getId());
+                logger.trace("{}.callFunction called", activationId);
+                json = objectMapper.writeValueAsString(dataBridge.getOutputs());
             }
 
-            return executionScopeDataBridge.getOutputs();
+            List<Variable> outputs = objectMapper.readValue(json, new TypeReference<List<Variable>>() {});
+
+            return new JsExecutionResult(
+                outputs,
+                outputBuilder.toString(),
+                errorBuilder.toString()
+            );
         } finally {
-            executionScope.deactivate();
+            scope.deactivate();
         }
-    }
-
-    public Context getContext() {
-        Context context = Context.newBuilder("js")
-            .allowAllAccess(true)
-            .engine(engine)
-            .build();
-        Value bindings = context.getBindings("js");
-        bindingsProviders.forEach(o -> o.setBindings(bindings));
-
-        return context;
     }
 }
