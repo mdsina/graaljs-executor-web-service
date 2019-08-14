@@ -36,7 +36,7 @@ public class ScriptExecutionConfiguration {
     @Validated
     @EnableConfigurationProperties
     @ConfigurationProperties("script.execution")
-    public class NashornConfigurationProps {
+    public static class ExecConfigurationProps {
 
         @NotNull
         @Min(1L)
@@ -95,7 +95,7 @@ public class ScriptExecutionConfiguration {
     @Bean(name = "graalObjectPool")
     public ObjectPool<ContextWrapper> scriptEngineObjectPool(
         @Qualifier("graalObjectFactory") PooledObjectFactory<ContextWrapper> factory,
-        NashornConfigurationProps props
+        ExecConfigurationProps props
     ) throws Exception {
         GenericObjectPoolConfig<ContextWrapper> config = new GenericObjectPoolConfig<>();
 
