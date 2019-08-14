@@ -3,9 +3,9 @@ package com.github.mdsina.graaljs.executorwebservice.execution;
 import com.github.mdsina.graaljs.executorwebservice.context.ScriptExecutionScope;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import com.github.mdsina.graaljs.executorwebservice.dto.ScriptDto;
+import com.github.mdsina.graaljs.executorwebservice.logging.SLF4JOutputStreamBridge.SLF4JOutputStreamBridgeBuilder;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
-import java.util.Map;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.pool2.ObjectPool;
 import org.graalvm.polyglot.Value;
@@ -23,20 +23,29 @@ public class JavaScriptSourceExecutor {
     private final ScriptExecutionScope executionScope;
     private final RandomDataGenerator randomDataGenerator;
     private final ExecutionScopeDataBridge executionScopeDataBridge;
+    private final SLF4JOutputStreamBridgeBuilder outputStreamBuilder;
+    private final SLF4JOutputStreamBridgeBuilder errorStreamBuilder;
+    private final JsonConverterProxy jsonConverterProxy;
 
     public JavaScriptSourceExecutor(
         @Qualifier("graalObjectPool") ObjectPool<ContextWrapper> pool,
         ScriptExecutionScope executionScope,
         ExecutionScopeDataBridge executionScopeDataBridge,
-        RandomDataGenerator randomDataGenerator
+        RandomDataGenerator randomDataGenerator,
+        @Qualifier("jsOutputStreamBuilder") SLF4JOutputStreamBridgeBuilder outputStreamBuilder,
+        @Qualifier("jsErrorStreamBuilder") SLF4JOutputStreamBridgeBuilder errorStreamBuilder,
+        JsonConverterProxy jsonConverterProxy
     ) {
         this.pool = pool;
         this.executionScope = executionScope;
         this.executionScopeDataBridge = executionScopeDataBridge;
         this.randomDataGenerator = randomDataGenerator;
+        this.outputStreamBuilder = outputStreamBuilder;
+        this.errorStreamBuilder = errorStreamBuilder;
+        this.jsonConverterProxy = jsonConverterProxy;
     }
 
-    public List<Map<String, Object>> execute(
+    public JsExecutionResult execute(
         ScriptDto script,
         List<Variable> inputs
     ) throws Exception {
@@ -48,13 +57,23 @@ public class JavaScriptSourceExecutor {
         ContextWrapper contextWrapper = pool.borrowObject();
         try {
             Value namespaceObj = contextWrapper.getScriptBindings(script);
+            jsonConverterProxy.setJsonConverter(contextWrapper.getJsonConverter());
 
             executionScopeDataBridge.setInputs(inputs);
+
+            StringBuilder outputBuilder = new StringBuilder();
+            StringBuilder errorBuilder = new StringBuilder();
+            outputStreamBuilder.addConsumer(outputBuilder::append);
+            errorStreamBuilder.addConsumer(errorBuilder::append);
 
             namespaceObj.getMember("callFunction").executeVoid();
             logger.trace("{}.callFunction called", script.getId());
 
-            return executionScopeDataBridge.getOutputs();
+            return new JsExecutionResult(
+                executionScopeDataBridge.getOutputs(),
+                outputBuilder.toString(),
+                errorBuilder.toString()
+            );
         } finally {
             pool.returnObject(contextWrapper);
             executionScope.deactivate();

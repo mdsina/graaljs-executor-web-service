@@ -43,7 +43,7 @@ public class BenchmarkTest {
     }
 
     @Test
-//    @Ignore
+    @Ignore
     public void executeJmhRunner() throws RunnerException {
         String relPath = getClass().getProtectionDomain().getCodeSource().getLocation().getFile();
         File compilerDir = new File(relPath + "../../target/compiler");

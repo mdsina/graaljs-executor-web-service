@@ -4,6 +4,10 @@ import com.github.mdsina.graaljs.executorwebservice.bindings.BindingsProvider;
 import com.github.mdsina.graaljs.executorwebservice.context.ScriptExecutionScope;
 import com.github.mdsina.graaljs.executorwebservice.context.ScriptScopeBeanFactoryPostProcessor;
 import com.github.mdsina.graaljs.executorwebservice.execution.ContextWrapper;
+import com.github.mdsina.graaljs.executorwebservice.logging.SLF4JOutputStreamBridge;
+import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -17,7 +21,10 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Value;
+import org.slf4j.event.Level;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -52,15 +59,63 @@ public class ScriptExecutionConfiguration {
     }
 
     @Bean
+    public HostAccess hostAccess() {
+        return HostAccess.newBuilder(HostAccess.ALL)
+            // https://github.com/graalvm/graaljs/issues/165#issuecomment-493926312
+            .targetTypeMapping(Long.class, Object.class, null, v -> v)
+            // converted to BigDecimal because do not need to handle representation conversion from scientific
+            .targetTypeMapping(Double.class, Object.class, null, BigDecimal::valueOf)
+            .targetTypeMapping(List.class, Object.class, null, v -> v)
+            .build();
+    }
+
+    @Bean
     public Engine getEngine() {
         return Engine.create();
     }
 
+    @Bean("jsOutputStreamBuilder")
+//    @com.github.mdsina.graaljs.executorwebservice.context.annotation.ScriptExecutionScope
+    public SLF4JOutputStreamBridge.SLF4JOutputStreamBridgeBuilder outputStreamBuilder() {
+        return SLF4JOutputStreamBridge.newBuilder().logLevel(Level.DEBUG);
+    }
+
+    @Bean("jsErrorStreamBuilder")
+//    @com.github.mdsina.graaljs.executorwebservice.context.annotation.ScriptExecutionScope
+    public SLF4JOutputStreamBridge.SLF4JOutputStreamBridgeBuilder errorStreamBuilder() {
+        return SLF4JOutputStreamBridge.newBuilder().logLevel(Level.DEBUG);
+    }
+
+    @Bean("jsOutputStream")
+//    @com.github.mdsina.graaljs.executorwebservice.context.annotation.ScriptExecutionScope
+    public SLF4JOutputStreamBridge outputStream(
+        @Qualifier("jsOutputStreamBuilder") SLF4JOutputStreamBridge.SLF4JOutputStreamBridgeBuilder builder
+    ) {
+        return builder.build();
+    }
+
+    @Bean("jsErrorStream")
+//    @com.github.mdsina.graaljs.executorwebservice.context.annotation.ScriptExecutionScope
+    public SLF4JOutputStreamBridge errorStream(
+        @Qualifier("jsErrorStreamBuilder") SLF4JOutputStreamBridge.SLF4JOutputStreamBridgeBuilder builder
+    ) {
+        return builder.build();
+    }
+
     @Bean
     @Scope("prototype")
-    public Context getContext(Set<BindingsProvider> bindingsProviders, Engine engine) {
+    public Context getContext(
+        Set<BindingsProvider> bindingsProviders,
+        Engine engine,
+        HostAccess hostAccess,
+        @Qualifier("jsOutputStream") OutputStream outputStream,
+        @Qualifier("jsErrorStream") OutputStream errorStream
+    ) {
         Context context = Context.newBuilder("js")
             .allowAllAccess(true)
+            .allowHostAccess(hostAccess)
+            .out(outputStream)
+            .err(errorStream)
             .engine(engine)
             .build();
         Value bindings = context.getBindings("js");
@@ -77,12 +132,12 @@ public class ScriptExecutionConfiguration {
 
     @Bean(name = "graalObjectFactory")
     public PooledObjectFactory<ContextWrapper> scriptEnginePooledObjectFactory(
-        Set<BindingsProvider> bindingsProviders, Engine engine
+        ObjectFactory<Context> contextObjectFactory
     ) {
         return new BasePooledObjectFactory<>() {
             @Override
             public ContextWrapper create() {
-                return getContextWrapper(getContext(bindingsProviders, engine));
+                return getContextWrapper(contextObjectFactory.getObject());
             }
 
             @Override

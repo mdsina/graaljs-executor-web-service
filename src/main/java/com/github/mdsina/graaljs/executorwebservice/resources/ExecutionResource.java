@@ -6,6 +6,7 @@ import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import com.github.mdsina.graaljs.executorwebservice.dto.CallRequestDto;
 import com.github.mdsina.graaljs.executorwebservice.dto.ScriptDto;
 import com.github.mdsina.graaljs.executorwebservice.execution.JavaScriptSourceExecutor;
+import com.github.mdsina.graaljs.executorwebservice.execution.JsExecutionResult;
 import com.github.mdsina.graaljs.executorwebservice.service.ScriptStorageService;
 import java.util.List;
 import java.util.Map;
@@ -35,17 +36,16 @@ public class ExecutionResource {
     }
 
     @PostMapping("/script/{scriptId}")
-    public ResponseEntity<List<Variable>> performCall(
+    public JsExecutionResult performCall(
         @PathVariable String scriptId, @RequestBody CallRequestDto request
     ) throws Exception {
 
         ScriptDto script = scriptStorageService.getScript(scriptId);
-        List<Map<String, Object>> result = javaScriptSourceExecutor.execute(
+        JsExecutionResult result = javaScriptSourceExecutor.execute(
             script,
             request.getInputs()
         );
-        // Lazy converting just for test purposes. TODO: replace with builder
-        String json = objectMapper.writeValueAsString(result);
-        return ResponseEntity.ok(objectMapper.readValue(json, new TypeReference<List<Variable>>() {}));
+
+        return result;
     }
 }

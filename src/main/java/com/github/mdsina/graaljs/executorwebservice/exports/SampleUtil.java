@@ -1,5 +1,6 @@
 package com.github.mdsina.graaljs.executorwebservice.exports;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.mdsina.graaljs.executorwebservice.execution.ExecutionScopeDataBridge;
 import com.github.mdsina.graaljs.executorwebservice.util.TransliterationUtil;
 import org.springframework.stereotype.Component;
@@ -17,11 +18,11 @@ public class SampleUtil {
         return TransliterationUtil.transliterate(str);
     }
 
-    public Object input(String key) {
+    public Object input(String key) throws JsonProcessingException {
         return executionScopeDataBridge.input(key);
     }
 
-    public Object input(String key, Object defaultValue) {
+    public Object input(String key, Object defaultValue) throws JsonProcessingException {
         return executionScopeDataBridge.input(key, defaultValue);
     }
 
