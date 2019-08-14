@@ -90,7 +90,7 @@ public class ExecutorWebServiceApplicationTests {
                     last = now;
                 }
             }
-            System.out.printf("total: %d (%d ms)%n", total, System.currentTimeMillis() - start);
+            System.out.printf("iter %d: total: %d (%d ms)%n", iter, total, System.currentTimeMillis() - start);
         }
     }
 }

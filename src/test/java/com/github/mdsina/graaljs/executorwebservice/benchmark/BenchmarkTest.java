@@ -4,8 +4,10 @@ import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import com.github.mdsina.graaljs.executorwebservice.execution.JavaScriptSourceExecutor;
 import com.github.mdsina.graaljs.executorwebservice.script.Script;
 import com.github.mdsina.graaljs.executorwebservice.script.ScriptStorageService;
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -41,12 +43,16 @@ public class BenchmarkTest {
     }
 
     @Test
+    @Ignore
     public void executeJmhRunner() throws RunnerException {
+        String relPath = getClass().getProtectionDomain().getCodeSource().getLocation().getFile();
+        File compilerDir = new File(relPath + "../../target/compiler");
+
         Options jmhRunnerOptions = new OptionsBuilder()
             // set the class name regex for benchmarks to search for to the current class
             .include("\\." + this.getClass().getSimpleName() + "\\.")
-            .warmupIterations(100)
-            .measurementIterations(100)
+            .warmupIterations(15)
+            .measurementIterations(30)
             // do not use forking or the benchmark methods will not see references stored within its class
             .forks(0)
             // do not use multiple threads
@@ -57,8 +63,13 @@ public class BenchmarkTest {
             .shouldFailOnError(true)
             .resultFormat(ResultFormatType.JSON)
 //            .result("/dev/null") // set this to a valid filename if you want reports
-//            .shouldFailOnError(true)
-            .jvmArgs("-XX:+UnlockExperimentalVMOptions -XX:+UseJVMCICompiler -server")
+            .jvmArgs(
+                "-XX:+UnlockExperimentalVMOptions -XX:+UseJVMCICompiler --module-path="
+                    + compilerDir.getAbsolutePath()
+                    + " --upgrade-module-path="
+                    + compilerDir.getAbsolutePath() + File.separator + "compiler.jar " +
+                    "-server"
+            )
             .build();
 
         new Runner(jmhRunnerOptions).run();
