@@ -3,9 +3,7 @@ package com.github.mdsina.graaljs.executorwebservice.exports;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.mdsina.graaljs.executorwebservice.execution.ExecutionScopeDataBridge;
 import com.github.mdsina.graaljs.executorwebservice.util.TransliterationUtil;
-import org.springframework.stereotype.Component;
 
-@Component
 public class SampleUtil {
 
     private final ExecutionScopeDataBridge executionScopeDataBridge;

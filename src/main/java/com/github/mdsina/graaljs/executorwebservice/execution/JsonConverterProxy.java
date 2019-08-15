@@ -1,6 +1,5 @@
 package com.github.mdsina.graaljs.executorwebservice.execution;
 
-import com.github.mdsina.graaljs.executorwebservice.context.annotation.ScriptExecutionScope;
 import com.github.mdsina.graaljs.executorwebservice.util.JsonConverter;
 import org.springframework.stereotype.Component;
 

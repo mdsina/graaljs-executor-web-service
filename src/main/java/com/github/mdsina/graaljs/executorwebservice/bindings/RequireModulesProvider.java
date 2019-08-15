@@ -6,10 +6,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.graalvm.polyglot.Value;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-@Service
 public class RequireModulesProvider implements BindingsProvider {
 
     private final Map<String, Object> modules;

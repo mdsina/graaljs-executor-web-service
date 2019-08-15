@@ -3,8 +3,8 @@ package com.github.mdsina.graaljs.executorwebservice.execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mdsina.graaljs.executorwebservice.context.annotation.ScriptExecutionScope;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
+import com.github.mdsina.graaljs.executorwebservice.util.JsonConverter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -12,21 +12,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 
-@Component
-@ScriptExecutionScope
 public class ExecutionScopeDataBridge {
 
-    private final JsonConverterProxy jsonConverterProxy;
+    private final JsonConverter jsonConverterProxy;
     private final ObjectMapper objectMapper;
 
     private Map<String, Object> inputs = new HashMap<>();
     private List<Map<String, Object>> outputs = new ArrayList<>();
 
     public ExecutionScopeDataBridge(
-        JsonConverterProxy jsonConverterProxy,
+        JsonConverter jsonConverterProxy,
         ObjectMapper objectMapper
     ) {
         this.jsonConverterProxy = jsonConverterProxy;

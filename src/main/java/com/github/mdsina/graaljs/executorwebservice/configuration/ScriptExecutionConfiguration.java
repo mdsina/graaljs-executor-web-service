@@ -1,17 +1,12 @@
 package com.github.mdsina.graaljs.executorwebservice.configuration;
 
-import com.github.mdsina.graaljs.executorwebservice.bindings.BindingsProvider;
-import com.github.mdsina.graaljs.executorwebservice.context.ScriptExecutionScope;
-import com.github.mdsina.graaljs.executorwebservice.context.ScriptScopeBeanFactoryPostProcessor;
 import com.github.mdsina.graaljs.executorwebservice.execution.ContextWrapper;
 import com.github.mdsina.graaljs.executorwebservice.logging.SLF4JOutputStreamBridge;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.PooledObject;
@@ -22,16 +17,13 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.HostAccess;
-import org.graalvm.polyglot.Value;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -105,23 +97,18 @@ public class ScriptExecutionConfiguration {
     @Bean
     @Scope("prototype")
     public Context getContext(
-        Set<BindingsProvider> bindingsProviders,
         Engine engine,
         HostAccess hostAccess,
         @Qualifier("jsOutputStream") OutputStream outputStream,
         @Qualifier("jsErrorStream") OutputStream errorStream
     ) {
-        Context context = Context.newBuilder("js")
+        return Context.newBuilder("js")
             .allowAllAccess(true)
             .allowHostAccess(hostAccess)
             .out(outputStream)
             .err(errorStream)
             .engine(engine)
             .build();
-        Value bindings = context.getBindings("js");
-        bindingsProviders.forEach(o -> o.setBindings(bindings));
-
-        return context;
     }
 
     @Bean
@@ -163,21 +150,5 @@ public class ScriptExecutionConfiguration {
         pool.preparePool();
 
         return pool;
-    }
-
-    @Bean
-    public RandomDataGenerator randomDataGenerator() {
-        return new RandomDataGenerator();
-    }
-
-    @Bean
-    public ScriptScopeBeanFactoryPostProcessor scriptScopeBeanFactoryPostProcessor() {
-        return new ScriptScopeBeanFactoryPostProcessor();
-    }
-
-    @DependsOn("scriptScopeBeanFactoryPostProcessor")
-    @Bean
-    public ScriptExecutionScope scriptExecutionScope(ConfigurableListableBeanFactory factory) {
-        return (ScriptExecutionScope) factory.getRegisteredScope(ScriptExecutionScope.ID);
     }
 }
