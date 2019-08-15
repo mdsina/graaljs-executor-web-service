@@ -43,7 +43,7 @@ public class SLF4JOutputStreamBridge extends ByteArrayOutputStream {
         return new SLF4JOutputStreamBridgeBuilder();
     }
 
-    SLF4JOutputStreamBridge(Level level, List<Consumer<String>> consumers) {
+    private SLF4JOutputStreamBridge(Level level, List<Consumer<String>> consumers) {
         Objects.requireNonNull(logger, "Logger cannot be null");
         Objects.requireNonNull(consumers, "Consumers cannot be null");
         Objects.requireNonNull(level, "Log level cannot be null");

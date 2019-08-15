@@ -2,9 +2,7 @@ package com.github.mdsina.graaljs.executorwebservice.bindings.modules;
 
 import com.github.mdsina.graaljs.executorwebservice.bindings.RequireModule;
 import com.github.mdsina.graaljs.executorwebservice.bindings.exports.SampleUtil;
-import org.springframework.stereotype.Component;
 
-@Component
 public class SampleUtilModule implements RequireModule {
 
     private final SampleUtil sampleUtil;

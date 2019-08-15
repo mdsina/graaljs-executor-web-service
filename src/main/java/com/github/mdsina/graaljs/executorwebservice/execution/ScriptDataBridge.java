@@ -3,8 +3,7 @@ package com.github.mdsina.graaljs.executorwebservice.execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mdsina.graaljs.executorwebservice.interop.JsonConverterProxy;
-import com.github.mdsina.graaljs.executorwebservice.spring.context.annotation.ScriptExecutionScope;
+import com.github.mdsina.graaljs.executorwebservice.interop.JsonConverter;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -14,15 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 
-@Component
-@ScriptExecutionScope
 @RequiredArgsConstructor
-public class ExecutionScopeDataBridge {
+public class ScriptDataBridge {
 
-    private final JsonConverterProxy jsonConverterProxy;
+    private final JsonConverter jsonConverter;
     private final ObjectMapper objectMapper;
 
     private Map<String, Object> inputs = new HashMap<>();
@@ -40,7 +36,7 @@ public class ExecutionScopeDataBridge {
             // see https://github.com/graalvm/graaljs/issues/88
             // TODO: remove condition when implemented in graal.js
             // Also JsonVariable value used as object in JS calls, so need to parse them as JS objects
-            return jsonConverterProxy.parse(objectMapper.writeValueAsString(value));
+            return jsonConverter.parse(objectMapper.writeValueAsString(value));
         }
 
         if (!ClassUtils.isPrimitiveOrWrapper(value.getClass())) {

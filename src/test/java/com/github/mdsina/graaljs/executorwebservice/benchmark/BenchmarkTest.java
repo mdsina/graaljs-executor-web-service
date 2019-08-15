@@ -5,6 +5,7 @@ import com.github.mdsina.graaljs.executorwebservice.execution.JavaScriptSourceEx
 import com.github.mdsina.graaljs.executorwebservice.script.Script;
 import com.github.mdsina.graaljs.executorwebservice.script.ScriptStorageService;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Ignore;
@@ -30,7 +31,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class BenchmarkTest {
 
     private static ScriptStorageService scriptStorageService;
@@ -43,10 +44,9 @@ public class BenchmarkTest {
     }
 
     @Test
-    @Ignore
-    public void executeJmhRunner() throws RunnerException {
+    public void executeJmhRunner() throws RunnerException, IOException {
         String relPath = getClass().getProtectionDomain().getCodeSource().getLocation().getFile();
-        File compilerDir = new File(relPath + "../../target/compiler");
+        File compilerDir = new File(relPath + "../compiler");
 
         Options jmhRunnerOptions = new OptionsBuilder()
             // set the class name regex for benchmarks to search for to the current class
@@ -65,9 +65,9 @@ public class BenchmarkTest {
 //            .result("/dev/null") // set this to a valid filename if you want reports
             .jvmArgs(
                 "-XX:+UnlockExperimentalVMOptions -XX:+UseJVMCICompiler --module-path="
-                    + compilerDir.getAbsolutePath()
+                    + compilerDir.getCanonicalPath()
                     + " --upgrade-module-path="
-                    + compilerDir.getAbsolutePath() + File.separator + "compiler.jar " +
+                    + compilerDir.getCanonicalPath() + File.separator + "compiler.jar " +
                     "-server"
             )
             .build();
