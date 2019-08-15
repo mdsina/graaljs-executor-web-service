@@ -16,6 +16,7 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -43,7 +44,7 @@ public class BenchmarkTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void executeJmhRunner() throws RunnerException {
         String relPath = getClass().getProtectionDomain().getCodeSource().getLocation().getFile();
         File compilerDir = new File(relPath + "../../target/compiler");
@@ -58,6 +59,7 @@ public class BenchmarkTest {
             // do not use multiple threads
             .threads(1)
             .shouldDoGC(true)
+            .addProfiler(GCProfiler.class)
             .warmupTime(TimeValue.seconds(1))
             .measurementTime(TimeValue.seconds(1))
             .shouldFailOnError(true)
