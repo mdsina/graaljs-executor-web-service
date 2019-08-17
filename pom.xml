@@ -114,7 +114,7 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-Xmx2048m -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --module-path=${compiler.dir} --upgrade-module-path=${compiler.dir}/compiler.jar</argLine>
+                            <argLine>-Xmx2048m -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --module-path=${compiler.dir}${file.separator}graal-sdk.jar${path.separator}${compiler.dir}${file.separator}truffle-api.jar --upgrade-module-path=${compiler.dir}${file.separator}compiler.jar -Dgraal.PrintCompilation=true -Dgraal.LogFile=graal.log</argLine>
                         </configuration>
                     </plugin>
                     <plugin>
