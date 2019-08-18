@@ -41,7 +41,13 @@ public class JavaScriptSourceExecutor {
         this.bindingsProviderFactory = bindingsProviderFactory;
     }
 
-    public JsExecutionResult execute(String scriptName, String body, List<Variable> inputs) throws Exception {
+    public JsExecutionResult execute(
+        String scriptName,
+        String body,
+        List<Variable> inputs,
+        boolean isDebug
+    ) throws Exception {
+
         StringBuilder outputBuilder = new StringBuilder();
         StringBuilder errorBuilder = new StringBuilder();
 
@@ -58,7 +64,11 @@ public class JavaScriptSourceExecutor {
         Source source = sourceCache.getSource(scriptName, body);
         String json;
 
-        try (Context context = contextObjectFactory.getContext(outputStreamBridge, errorStreamBridge)) {
+        try (
+            Context context = !isDebug
+                ? contextObjectFactory.getContext(outputStreamBridge, errorStreamBridge)
+                : contextObjectFactory.getDebugContext(outputStreamBridge, errorStreamBridge, scriptName)
+        ) {
             ScriptDataBridge dataBridge = new ScriptDataBridge(
                 new JsonConverter(context.getBindings("js").getMember("JSON")),
                 objectMapper

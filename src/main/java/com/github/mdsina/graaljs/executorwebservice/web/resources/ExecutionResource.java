@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -21,14 +22,17 @@ public class ExecutionResource {
 
     @PostMapping("/script/{scriptId}")
     public JsExecutionResult performCall(
-        @PathVariable String scriptId, @RequestBody CallRequest request
+        @PathVariable String scriptId,
+        @RequestBody CallRequest request,
+        @RequestParam(value = "debug", defaultValue = "false") boolean debug
     ) throws Exception {
 
         Script script = scriptStorageService.getScript(scriptId);
         return javaScriptSourceExecutor.execute(
             script.getId(),
             script.getBody(),
-            request.getInputs()
+            request.getInputs(),
+            debug
         );
     }
 }

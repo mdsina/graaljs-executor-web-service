@@ -23,4 +23,16 @@ public class ContextFactory {
             .engine(engine)
             .build();
     }
+
+    public Context getDebugContext(OutputStream outputStream, OutputStream errorStream, String scriptName) {
+        return Context.newBuilder("js")
+            .allowAllAccess(true)
+            .allowHostAccess(hostAccess)
+            .option("inspect", "4242")
+            .option("inspect.Path", scriptName) // just for test purposes. should be unique
+            .option("inspect.Suspend", "true")
+            .out(outputStream)
+            .err(errorStream)
+            .build();
+    }
 }

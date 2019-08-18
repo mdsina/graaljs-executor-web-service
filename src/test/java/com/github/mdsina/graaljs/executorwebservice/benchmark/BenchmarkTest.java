@@ -105,7 +105,8 @@ public class BenchmarkTest {
         javaScriptSourceExecutor.execute(
             script.getId(),
             script.getBody(),
-            List.of(Variable.builder().name("I").value("PERF_TEST").build())
+            List.of(Variable.builder().name("I").value("PERF_TEST").build()),
+            false
         );
     }
 }

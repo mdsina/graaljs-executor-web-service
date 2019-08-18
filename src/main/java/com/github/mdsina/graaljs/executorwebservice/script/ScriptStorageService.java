@@ -17,7 +17,7 @@ public class ScriptStorageService {
 
     private static final LocalDateTime START_TIME = LocalDateTime.now(); // just for test purposes
     private static final Map<String, Script> SCRIPTS = new ConcurrentHashMap<>();
-    private static final List<String> SCRIPT_NAMES = List.of("TEST", "PERF");
+    private static final List<String> SCRIPT_NAMES = List.of("TEST", "PERF", "JOKER");
 
     static {
         SCRIPT_NAMES.forEach(s -> {
