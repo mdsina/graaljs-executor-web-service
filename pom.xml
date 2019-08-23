@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.1.1.RELEASE</version>
+        <version>2.1.7.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.github.mdsina.graaljs</groupId>
@@ -16,8 +16,8 @@
 
     <properties>
         <java.version>11</java.version>
-        <graal.version>19.1.1</graal.version>
-        <compiler.dir>${project.build.directory}/compiler</compiler.dir>
+        <graal.version>19.2.0</graal.version>
+        <compiler.dir>${project.build.directory}${file.separator}compiler</compiler.dir>
     </properties>
 
     <dependencies>
@@ -26,6 +26,12 @@
             <artifactId>lombok</artifactId>
             <version>1.18.8</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.uuid</groupId>
+            <artifactId>java-uuid-generator</artifactId>
+            <version>3.2.0</version>
         </dependency>
 
         <dependency>

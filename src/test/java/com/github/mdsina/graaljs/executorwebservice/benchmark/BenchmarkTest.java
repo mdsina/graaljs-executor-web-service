@@ -7,7 +7,8 @@ import com.github.mdsina.graaljs.executorwebservice.bindings.exports.QueryString
 import com.github.mdsina.graaljs.executorwebservice.bindings.modules.QueryStringModule;
 import com.github.mdsina.graaljs.executorwebservice.cache.SourceCache;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
-import com.github.mdsina.graaljs.executorwebservice.execution.JavaScriptSourceExecutor;
+import com.github.mdsina.graaljs.executorwebservice.execution.JsDebugTaskWorker;
+import com.github.mdsina.graaljs.executorwebservice.execution.JsSourceExecutor;
 import com.github.mdsina.graaljs.executorwebservice.script.Script;
 import com.github.mdsina.graaljs.executorwebservice.script.ScriptStorageService;
 import java.io.File;
@@ -25,6 +26,7 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
@@ -41,11 +43,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class BenchmarkTest {
 
     private static ScriptStorageService scriptStorageService;
-    private static JavaScriptSourceExecutor javaScriptSourceExecutor;
+    private static JsSourceExecutor jsSourceExecutor;
 
     static {
         scriptStorageService = new ScriptStorageService();
-        javaScriptSourceExecutor = new JavaScriptSourceExecutor(
+        jsSourceExecutor = new JsSourceExecutor(
             new SourceCache(),
             new ContextFactory(
                 Engine.create(),
@@ -58,7 +60,8 @@ public class BenchmarkTest {
                     .build()
             ),
             new ObjectMapper(),
-            new BindingsProviderFactory(new QueryStringModule(new QueryString()))
+            new BindingsProviderFactory(new QueryStringModule(new QueryString())),
+            new JsDebugTaskWorker()
         );
     }
 
@@ -100,13 +103,12 @@ public class BenchmarkTest {
     }
 
     @Benchmark
-    public void someBenchmarkMethod() throws Exception {
+    public void scriptExecute(Blackhole bh) throws Exception {
         Script script = scriptStorageService.getScript("PERF_1");
-        javaScriptSourceExecutor.execute(
+        bh.consume(jsSourceExecutor.execute(
             script.getId(),
             script.getBody(),
-            List.of(Variable.builder().name("I").value("PERF_TEST").build()),
-            false
-        );
+            List.of(Variable.builder().name("I").value("PERF_TEST").build())
+        ));
     }
 }

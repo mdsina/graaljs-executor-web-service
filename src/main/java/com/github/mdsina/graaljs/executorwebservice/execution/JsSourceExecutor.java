@@ -2,87 +2,96 @@ package com.github.mdsina.graaljs.executorwebservice.execution;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mdsina.graaljs.executorwebservice.bindings.BindingsProvider;
 import com.github.mdsina.graaljs.executorwebservice.bindings.BindingsProviderFactory;
 import com.github.mdsina.graaljs.executorwebservice.bindings.context.ContextFactory;
 import com.github.mdsina.graaljs.executorwebservice.cache.SourceCache;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import com.github.mdsina.graaljs.executorwebservice.interop.JsonConverter;
 import com.github.mdsina.graaljs.executorwebservice.logging.SLF4JOutputStreamBridge;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
+import java.util.function.BiFunction;
+import lombok.RequiredArgsConstructor;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
-import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 import org.springframework.stereotype.Service;
 
+@RequiredArgsConstructor
 @Service
-public class JavaScriptSourceExecutor {
+public class JsSourceExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final SourceCache sourceCache;
-    private final ContextFactory contextObjectFactory;
+    private final ContextFactory contextFactory;
     private final ObjectMapper objectMapper;
     private final BindingsProviderFactory bindingsProviderFactory;
+    private final JsDebugTaskWorker jsDebugTaskWorker;
 
-    public JavaScriptSourceExecutor(
-        SourceCache sourceCache,
-        ContextFactory contextObjectFactory,
-        ObjectMapper objectMapper,
-        BindingsProviderFactory bindingsProviderFactory
-    ) {
-        this.sourceCache = sourceCache;
-        this.contextObjectFactory = contextObjectFactory;
-        this.objectMapper = objectMapper;
-        this.bindingsProviderFactory = bindingsProviderFactory;
+    public String executeDebug(String scriptName, String body, List<Variable> inputs) {
+        return jsDebugTaskWorker.executeDebugTask(uuid -> () -> {
+            try {
+                return executeOnContext(
+                    sourceCache.getSource(scriptName, body),
+                    inputs,
+                    (outputStream, errorStream) -> contextFactory.getDebugContext(outputStream, errorStream, uuid)
+                );
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-    public JsExecutionResult execute(
-        String scriptName,
-        String body,
+    public JsExecutionResult execute(String scriptName, String body, List<Variable> inputs) throws IOException {
+        return executeOnContext(
+            sourceCache.getSource(scriptName, body),
+            inputs,
+            contextFactory::getContext
+        );
+    }
+
+    private JsExecutionResult executeOnContext(
+        Source source,
         List<Variable> inputs,
-        boolean isDebug
-    ) throws Exception {
+        BiFunction<OutputStream, OutputStream, Context> contextFactory
+    ) throws IOException {
 
-        StringBuilder outputBuilder = new StringBuilder();
-        StringBuilder errorBuilder = new StringBuilder();
+        var outputBuilder = new StringBuilder();
+        var errorBuilder = new StringBuilder();
 
-        SLF4JOutputStreamBridge outputStreamBridge = SLF4JOutputStreamBridge.newBuilder()
-            .logLevel(Level.DEBUG)
+        var outputStreamBridge = SLF4JOutputStreamBridge.newBuilder()
+            .logLevel(Level.INFO)
             .addConsumer(outputBuilder::append)
             .build();
 
-        SLF4JOutputStreamBridge errorStreamBridge = SLF4JOutputStreamBridge.newBuilder()
-            .logLevel(Level.DEBUG)
+        var errorStreamBridge = SLF4JOutputStreamBridge.newBuilder()
+            .logLevel(Level.INFO)
             .addConsumer(errorBuilder::append)
             .build();
 
-        Source source = sourceCache.getSource(scriptName, body);
         String json;
 
-        try (
-            Context context = !isDebug
-                ? contextObjectFactory.getContext(outputStreamBridge, errorStreamBridge)
-                : contextObjectFactory.getDebugContext(outputStreamBridge, errorStreamBridge, scriptName)
-        ) {
-            ScriptDataBridge dataBridge = new ScriptDataBridge(
+        try (Context context = contextFactory.apply(outputStreamBridge, errorStreamBridge)) {
+            var dataBridge = new ScriptDataBridge(
                 new JsonConverter(context.getBindings("js").getMember("JSON")),
                 objectMapper
             );
             dataBridge.setInputs(inputs);
 
-            Value bindings = context.getBindings("js");
-
-            List<BindingsProvider> bindingsProviders = bindingsProviderFactory.getBindingsProviders(dataBridge);
+            var bindings = context.getBindings("js");
+            var bindingsProviders = bindingsProviderFactory.getBindingsProviders(dataBridge);
             bindingsProviders.forEach(o -> o.setBindings(bindings));
 
             context.eval(source);
             context.getBindings("js").getMember("callFunction").executeVoid();
-            logger.trace("{}.callFunction called", scriptName);
+
+            logger.trace("{}.callFunction called", source.getName());
+
             json = objectMapper.writeValueAsString(dataBridge.getOutputs());
         }
 

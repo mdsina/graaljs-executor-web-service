@@ -24,13 +24,14 @@ public class ContextFactory {
             .build();
     }
 
-    public Context getDebugContext(OutputStream outputStream, OutputStream errorStream, String scriptName) {
+    public Context getDebugContext(OutputStream outputStream, OutputStream errorStream, String id) {
         return Context.newBuilder("js")
             .allowAllAccess(true)
             .allowHostAccess(hostAccess)
             .option("inspect", "4242")
-            .option("inspect.Path", scriptName) // just for test purposes. should be unique
-            .option("inspect.Suspend", "true")
+            .option("inspect.Path", id)
+            .option("inspect.Suspend", "true") // should be on first line,
+                // because after attaching debugger script will continue executing if it's false
             .out(outputStream)
             .err(errorStream)
             .build();
