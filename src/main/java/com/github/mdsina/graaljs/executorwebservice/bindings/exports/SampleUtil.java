@@ -2,7 +2,10 @@ package com.github.mdsina.graaljs.executorwebservice.bindings.exports;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.mdsina.graaljs.executorwebservice.execution.ScriptDataBridge;
+import com.github.mdsina.graaljs.executorwebservice.util.DateUtils;
 import com.github.mdsina.graaljs.executorwebservice.util.TransliterationUtil;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -24,5 +27,13 @@ public class SampleUtil {
 
     public void output(String key, Object value) {
         scriptDataBridge.output(key, value);
+    }
+
+    public String formatDate(ZonedDateTime dateTime) {
+        return DateUtils.formatDate(dateTime);
+    }
+
+    public String formatDate(ZonedDateTime dateTime, String format) {
+        return DateUtils.formatDate(dateTime, format);
     }
 }
