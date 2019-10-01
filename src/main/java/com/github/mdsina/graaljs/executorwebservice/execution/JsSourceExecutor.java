@@ -1,5 +1,6 @@
 package com.github.mdsina.graaljs.executorwebservice.execution;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mdsina.graaljs.executorwebservice.bindings.BindingsProviderFactory;
@@ -8,24 +9,24 @@ import com.github.mdsina.graaljs.executorwebservice.cache.SourceCache;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import com.github.mdsina.graaljs.executorwebservice.interop.JsonConverter;
 import com.github.mdsina.graaljs.executorwebservice.logging.SLF4JOutputStreamBridge;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.graalvm.polyglot.Value;
 import org.slf4j.event.Level;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 @Service
 public class JsSourceExecutor {
-
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final SourceCache sourceCache;
     private final ContextFactory contextFactory;
@@ -33,21 +34,17 @@ public class JsSourceExecutor {
     private final BindingsProviderFactory bindingsProviderFactory;
     private final JsDebugTaskWorker jsDebugTaskWorker;
 
-    public String executeDebug(String scriptName, String body, List<Variable> inputs) {
-        return jsDebugTaskWorker.executeDebugTask(uuid -> () -> {
-            try {
-                return executeOnContext(
-                    sourceCache.getSource(scriptName, body),
-                    inputs,
-                    (outputStream, errorStream) -> contextFactory.getDebugContext(outputStream, errorStream, uuid)
-                );
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
+//    public String executeDebug(String scriptName, String body, List<Variable> inputs) {
+//        return jsDebugTaskWorker.executeDebugTask(uuid -> () ->
+//            executeOnContext(
+//                sourceCache.getSource(scriptName, body),
+//                inputs,
+//                (outputStream, errorStream) -> contextFactory.getDebugContext(outputStream, errorStream, uuid)
+//            )
+//        );
+//    }
 
-    public JsExecutionResult execute(String scriptName, String body, List<Variable> inputs) throws IOException {
+    public Mono<JsExecutionResult> execute(String scriptName, String body, List<Variable> inputs) {
         return executeOnContext(
             sourceCache.getSource(scriptName, body),
             inputs,
@@ -55,52 +52,87 @@ public class JsSourceExecutor {
         );
     }
 
-    private JsExecutionResult executeOnContext(
+    private Mono<JsExecutionResult> executeOnContext(
         Source source,
         List<Variable> inputs,
         BiFunction<OutputStream, OutputStream, Context> contextFactory
-    ) throws IOException {
+    ) {
+        return Mono.subscriberContext()
+            .flatMap(ctx -> Mono.create(sink -> {
+                Context context = ctx.get("ctx");
+                JsonConverter jsonConverter = ctx.get("jsonConverter");
 
-        var outputBuilder = new StringBuilder();
-        var errorBuilder = new StringBuilder();
+                HashMap<String, Object> mappedInputs = new HashMap<>();
+                for (Variable input : inputs) {
+                    mappedInputs.put(input.getName(), input.getValue());
+                }
 
-        var outputStreamBridge = SLF4JOutputStreamBridge.newBuilder()
-            .logLevel(Level.INFO)
-            .addConsumer(outputBuilder::append)
-            .build();
+                Object parsedInputs;
+                try {
+                    parsedInputs = jsonConverter.parse(objectMapper.writeValueAsString(mappedInputs));
+                } catch (JsonProcessingException e) {
+                    sink.error(e);
+                    return;
+                }
 
-        var errorStreamBridge = SLF4JOutputStreamBridge.newBuilder()
-            .logLevel(Level.INFO)
-            .addConsumer(errorBuilder::append)
-            .build();
+                context.eval(source);
 
-        String json;
+                Value promise = context.getBindings("js")
+                    .getMember("callFunction")
+                    .execute(parsedInputs);
 
-        try (Context context = contextFactory.apply(outputStreamBridge, errorStreamBridge)) {
-            var dataBridge = new ScriptDataBridge(
-                new JsonConverter(context.getBindings("js").getMember("JSON")),
-                objectMapper
-            );
-            dataBridge.setInputs(inputs);
+                promise.getMember("then").executeVoid(
+                    (Consumer<Object>) sink::success,
+                    (Consumer<Object>) (o) -> sink.error(new RuntimeException(Value.asValue(o).toString()))
+                );
+            }))
+            .flatMap(res -> Mono.subscriberContext().map(ctx -> {
+                JsonConverter jsonConverter = ctx.get("jsonConverter");
 
-            var bindings = context.getBindings("js");
-            var bindingsProviders = bindingsProviderFactory.getBindingsProviders(dataBridge);
-            bindingsProviders.forEach(o -> o.setBindings(bindings));
+                String json = jsonConverter.stringify(res);
 
-            context.eval(source);
-            context.getBindings("js").getMember("callFunction").executeVoid();
+                Map<String, Object> outputs;
+                try {
+                    outputs = objectMapper.readValue(json, new TypeReference<>() {});
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
 
-            logger.trace("{}.callFunction called", source.getName());
+                List<Variable> outputVariables = new ArrayList<>();
+                outputs.forEach((k, v) -> outputVariables.add(Variable.builder().name(k).value(v).build()));
 
-            json = objectMapper.writeValueAsString(dataBridge.getOutputs());
-        }
+                return new JsExecutionResult(
+                    outputVariables,
+                    ctx.<StringBuilder>get("outputBuilder").toString(),
+                    ctx.<StringBuilder>get("errorBuilder").toString()
+                );
+            }))
+            .subscriberContext(ctx -> {
+                var outputBuilder = new StringBuilder();
+                var errorBuilder = new StringBuilder();
 
-        List<Variable> outputs = objectMapper.readValue(json, new TypeReference<List<Variable>>() {});
+                var outputStreamBridge = SLF4JOutputStreamBridge.newBuilder()
+                    .logLevel(Level.INFO)
+                    .addConsumer(outputBuilder::append)
+                    .build();
 
-        return new JsExecutionResult(
-            outputs,
-            outputBuilder.toString(),
-            errorBuilder.toString()
-        );
+                var errorStreamBridge = SLF4JOutputStreamBridge.newBuilder()
+                    .logLevel(Level.INFO)
+                    .addConsumer(errorBuilder::append)
+                    .build();
+
+                Context context = contextFactory.apply(outputStreamBridge, errorStreamBridge);
+
+                var jsonConverter = new JsonConverter(context.getBindings("js").getMember("JSON"));
+
+                var bindings = context.getBindings("js");
+                var bindingsProviders = bindingsProviderFactory.getBindingsProviders(jsonConverter);
+                bindingsProviders.forEach(o -> o.setBindings(bindings));
+
+                return ctx.put("ctx", context)
+                    .put("outputBuilder", outputBuilder)
+                    .put("jsonConverter", jsonConverter)
+                    .put("errorBuilder", outputBuilder);
+            });
     }
 }

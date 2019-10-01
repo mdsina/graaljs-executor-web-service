@@ -1,8 +1,16 @@
 const util = require('sample-util');
 
-callFunction = () => {
+callFunction = async (inputs) => {
+    const input = inputs['I'];
 
-    const ruStr = util.input('RU_STR');
+    const res = await util.request(`https://postman-echo.com/get?input=${input}`, "GET");
 
-    util.output('EN_STR', util.transliterate(ruStr));
+    const Thread = Java.type('java.lang.Thread');
+
+    console.log("RES:", JSON.stringify(res));
+    console.log("THREAD:", Thread.currentThread().getName());
+
+    return {
+        RESULT: res.args.input
+    };
 };

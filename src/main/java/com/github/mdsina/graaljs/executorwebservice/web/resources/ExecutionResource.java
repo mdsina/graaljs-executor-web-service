@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping(path = "/api/v1")
@@ -23,11 +24,7 @@ public class ExecutionResource {
     private final JsDebugTaskWorker jsDebugTaskWorker;
 
     @PostMapping("/script/{scriptId}")
-    public JsExecutionResult performCall(
-        @PathVariable String scriptId,
-        @RequestBody CallRequest request
-    ) throws Exception {
-
+    public Mono<JsExecutionResult> performCall(@PathVariable String scriptId, @RequestBody CallRequest request) {
         Script script = scriptStorageService.getScript(scriptId);
         return jsSourceExecutor.execute(
             script.getId(),
@@ -42,11 +39,7 @@ public class ExecutionResource {
         @RequestBody CallRequest request
     ) {
         Script script = scriptStorageService.getScript(scriptId);
-        return jsSourceExecutor.executeDebug(
-            script.getId(),
-            script.getBody(),
-            request.getInputs()
-        );
+        return null;
     }
 
     @PostMapping("/script/debug-output/{debugId}")
