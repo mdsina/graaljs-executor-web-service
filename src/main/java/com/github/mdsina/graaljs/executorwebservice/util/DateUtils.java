@@ -1,7 +1,10 @@
 package com.github.mdsina.graaljs.executorwebservice.util;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -28,5 +31,20 @@ public class DateUtils {
 
     public static String formatDate(ZonedDateTime dateTime) {
         return DEFAULT_DATE_FORMATTER.format(dateTime);
+    }
+
+    public static Object toDate(String dateString) {
+        try {
+            return LocalDateTime.parse(dateString);
+        } catch (DateTimeParseException e) {
+            //failed to parse LocalDateTime, trying again with LocalDate
+        }
+        try {
+            return LocalDate.parse(dateString).atStartOfDay();
+        } catch (DateTimeParseException e) {
+            //failed to parse LocalDateTime, trying again with LocalDate
+        }
+
+        return ZonedDateTime.parse(dateString);
     }
 }

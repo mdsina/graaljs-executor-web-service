@@ -13,6 +13,8 @@ import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import com.github.mdsina.graaljs.executorwebservice.execution.JsExecutionResult;
 import com.github.mdsina.graaljs.executorwebservice.script.ScriptStorageService;
 import com.github.mdsina.graaljs.executorwebservice.util.ScriptUtil;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -84,11 +86,17 @@ public class ExecutorWebServiceApplicationTests {
 
     @Test
     public void checkDateFormatUtilTest() throws Exception {
-        OffsetDateTime dateTime = OffsetDateTime.now(ZoneOffset.UTC);
+        LocalDateTime dateTime = LocalDateTime.now();
         String simple = DateTimeFormatter.ofPattern("dd.MM.yyy").format(dateTime);
 
+        String strDate = dateTime.toString();
+
         InvocationInfo invocationInfo = InvocationInfo.builder()
-            .inputs(List.of(Variable.builder().name("DATE").value(dateTime.toString()).build()))
+            .inputs(List.of(
+                Variable.builder().name("DATE").value(strDate).build(),
+                Variable.builder().name("DATE1").value(strDate + "Z").build(),
+                Variable.builder().name("DATE2").value(LocalDate.now().toString()).build()
+            ))
             .build();
 
         String content = this.mockMvc

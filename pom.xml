@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>11</java.version>
-        <graal.version>19.2.0</graal.version>
+        <graal.version>19.2.0.1</graal.version>
         <compiler.dir>${project.build.directory}${file.separator}compiler</compiler.dir>
         <commons-lang3.version>3.9</commons-lang3.version>
     </properties>

@@ -7,12 +7,14 @@ import com.github.mdsina.graaljs.executorwebservice.interop.JsonConverter;
 import com.github.mdsina.graaljs.executorwebservice.domain.Variable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.graalvm.polyglot.Value;
 import org.springframework.util.ClassUtils;
 
 @RequiredArgsConstructor
@@ -60,9 +62,18 @@ public class ScriptDataBridge {
     }
 
     public void output(String key, Object value) {
+        Value polyglotValue = (value instanceof Value)
+            ? (Value) value
+            : Value.asValue(value);
+
+        Object result = value;
+        if (polyglotValue.isDate()) {
+            result = polyglotValue.asInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().toString();
+        }
+
         Map<String, Object> output = new HashMap<>();
         output.put("name", key);
-        output.put("value", value);
+        output.put("value", result);
         outputs.add(output);
     }
 
