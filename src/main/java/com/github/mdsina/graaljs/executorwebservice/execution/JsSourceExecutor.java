@@ -127,12 +127,12 @@ public class JsSourceExecutor {
 
                 var bindings = context.getBindings("js");
                 var bindingsProviders = bindingsProviderFactory.getBindingsProviders(jsonConverter);
-                bindingsProviders.forEach(o -> o.setBindings(bindings));
+                bindingsProviders.forEach(o -> o.applyTo(bindings));
 
                 return ctx.put("ctx", context)
                     .put("outputBuilder", outputBuilder)
                     .put("jsonConverter", jsonConverter)
-                    .put("errorBuilder", outputBuilder);
+                    .put("errorBuilder", errorBuilder);
             });
     }
 }

@@ -30,7 +30,7 @@ public class SampleUtil {
     }
 
     public Object request(String url, String method) {
-        Function<Mono, Thenable> thenBuilder =
+        Function<Mono<?>, Thenable> thenBuilder =
             value ->
                 (resolve, reject) ->
                     value.doOnNext(resolve::executeVoid)

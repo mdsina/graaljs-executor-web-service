@@ -4,5 +4,5 @@ import org.graalvm.polyglot.Value;
 
 public interface BindingsProvider {
 
-    void setBindings(Value bindings);
+    void applyTo(Value bindings);
 }

@@ -27,7 +27,7 @@ public class RequireModulesProvider implements BindingsProvider {
     }
 
     @Override
-    public void setBindings(Value bindings) {
+    public void applyTo(Value bindings) {
         bindings.putMember("require", (Function<String, Object>) this::require);
     }
 }
